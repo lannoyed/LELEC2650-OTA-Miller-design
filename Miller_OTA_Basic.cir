@@ -1,0 +1,407 @@
+* TSMC 65nm OTA Simulation
+* Marco Gonzalez & Léopold Van Brandt
+* October 2022
+*-----------------------------------------------
+
+************************************
+*	Library & Technology settings
+************************************
+
+* Library containing the transistor model from the foundry
+.lib "/dir/TECHNOLOGY/cds2017/TSMC-N65/CMOS/LP/pdk/T-N65-CM-SP-007-K3_1_7A/models/eldo/crn65lp_2d5_lk_v1d7.eldo" TT_lvt
+.lib "/dir/TECHNOLOGY/cds2017/TSMC-N65/CMOS/LP/pdk/T-N65-CM-SP-007-K3_1_7A/models/eldo/crn65lp_2d5_lk_v1d7.eldo" TT_hvt
+
+* Complementary technological librairies
+.lib "/dir/TECHNOLOGY/cds2017/TSMC-N65/CMOS/LP/pdk/T-N65-CM-SP-007-K3_1_7A/models/eldo/crn65lp_2d5_lk_v1d7.eldo" stat_noise
+
+*******************************
+*	Options
+*******************************
+
+* Temperature
+.temp 25
+
+* Maximal time step
+.option HMAX = dt
+
+* To tune the accuracy of the simulation (related to the numerical methods, beyond the scope of this course; check the manual)
+.option EPS = 1e-8
+
+*******************************
+*	Design Parameters
+*******************************
+
+*** Supply voltage
+.param vdd_val = 3
+
+*** Load capacitance
+.param Cl = 10p
+
+*** Feed Back Capacitor
+
+.param Cf = 25p
+
+
+***** Default Design from TP4
+
+*#com
+* B = 1
+* gm_over_ID1 = 5
+* gm_over_ID4 = 5
+* gm_over_ID7 = 5
+* gm_over_ID9 = 5
+
+*** Transistor dimensions
+
+.param B = 1
+.param L = 1u
+
+.param W1 = 108u
+.param L1 = 3u
+.param W2 = W1
+.param L2 = L1
+
+.param W3 = 6u
+.param L3 = 0.6u
+.param W4 = W3
+.param L4 = L3
+
+.param W5 = 30u
+.param L5 = 1u
+.param W6 = 158u
+.param L6 = 1u
+
+.param W7 = 62u
+.param L7 = 0.6u
+.param W8 = 30u
+.param L8 = 1.5u
+
+.param W9 = 1u
+.param L9 = 4u
+
+*** Bias point
+
+.param VIN = 1.085
+.param IBIAS = 45u
+*#endcom
+
+***** Improved Design
+
+#com
+* B = 1
+* gm_over_ID1 = 20
+* gm_over_ID4 = 5
+* gm_over_ID7 = 5
+* gm_over_ID9 = 5
+
+*** Transistor dimensions
+
+.param B = 1
+.param L = 2u
+
+.param W1 = 4.15u
+.param L1 = L
+.param W2 = W1
+.param L2 = L
+
+.param W3 =3.6u
+.param L3 = L
+.param W4 = W3
+.param L4 = L
+
+.param W5 = B*W3
+.param L5 = L
+.param W6 = B*W4
+.param L6 = L
+
+.param W7 =0.67u
+.param L7 = L
+.param W8 = W7
+.param L8 = L
+
+.param W9 =4.43u
+.param L9 = L
+.param W10 = W9
+.param L10 = L
+
+*** Bias point
+
+.param VIN =0.6
+.param IBIAS =8.38u
+#endcom
+
+*** AC simulation parameters
+
+.param V0 = 5m
+.param fmin = 1
+.param fmax = 1e9
+
+*** TRAN simulation parameters
+
+.param fT = 1Mega
+* total duration of the simulation
+.param T = {10/fT}
+* time step
+.param dt = {0.01/fT}
+* Delay of the input step
+.param td = {100*dt}
+* Rise time of the input step
+.param tr = 10u
+* Parameters for a periodic pulse signal (see reference manual)
+
+*tr = 10 p STEP tr = 10u CMRR
+.param tf = 10p
+.param pw = {T-tr-tf}
+.param per = {2*T}
+.param vpulse_val = 0.6
+.param step = 0.01
+
+
+.param tr_CMRR = 10u
+.param tf_CMRR = tr_CMRR
+.param pw_CMRR = 1p
+
+*******************************
+*	Device under test
+*******************************
+
+***** OTA
+
+* Reminder
+* xMN D G S B
+
+xM1 G34 INm D125 D125 pch_lvt_mac w = W1 l = L1
+xM2 G7 INp D125 D125 pch_lvt_mac w = W2 l = L2
+
+xM3 G34 G34 GND GND nch_lvt_mac w = W3 l = L3
+xM4 G7  G34 GND GND nch_lvt_mac w = W4 l = L4
+
+xM5 D125 G5689 VDD VDD pch_lvt_mac w = W5 l = L5
+xM6 OUT G5689 VDD VDD pch_lvt_mac w = W6 l = L6
+
+xM7 OUT G7 GND GND nch_lvt_mac w = W7 l = L7
+xM8 G5689 G5689 VDD VDD pch_lvt_mac w = W8 l = L8
+
+xM9 G5689 G5689 GND GND nch_hvt_mac w = W9 l = L9
+
+
+* Load capacitance
+Cload OUT GND Cl
+
+* FeedBack capacitance
+Cfeedback OUT G7 Cf
+
+**********************************
+*	Supply and stimuli
+**********************************
+
+*** Ideal current source
+*IIbias VDD D9 DC IBIAS
+
+*** Ground
+* absolute voltage reference
+.connect GND 0
+
+*** Supply voltage
+VVDD VDD GND DC vdd_val 
+
+***PSRR***
+*VVDD VDD GND DC vdd_val AC +V0 
+
+*** Input Voltages Sources
+
+***** DC & AC *****
+
+*#com
+VVINp INp GND DC VIN AC +V0
+VVINm INm GND DC VIN AC -V0
+*#endcom
+
+***** Step response *****
+#com
+*** Negative feedback loop
+.connect INm OUT
+VVINp INp GND pulse vpulse_val 'vpulse_val+step' td tr tf pw per
+#endcom
+
+***** CMRR *****
+#com
+VVINp INp GND pulse vpulse_val 'vpulse_val+0.3' td tr_CMRR tf_CMRR pw_CMRR 
+
+VVINm INm GND pulse vpulse_val 'vpulse_val+0.3' td tr_CMRR tf_CMRR pw_CMRR
+#endcom
+
+#com
+VVINp INp GND DC VIN AC +V0
+VVINm INm GND DC VIN AC +V0
+#endcom
+
+***PSRR***
+#com
+VVINp INp GND DC vpulse_val
+VVINm INm GND DC vpulse_val
+
+
+#endcom
+
+***** Closed-loop stability *****
+#com
+*** Zero-voltage voltage source
+*** In DC it behaves like a short circuit
+*** In AC it measures the loop stability
+*** The positive pin is the new input and the negative pin is the new output
+VSTB INm OUT
+*** The positive input must still be biased in DC, but no AC component is needed
+VVINp INp 0 DC VIN
+#endcom
+
+**********************************
+*	Simulations and Measurements
+**********************************
+
+***** DC *****
+
+*****************************************************************************************
+** Determines the DC operating point of the circuit.
+**
+** Note: a .OP command is always automatically performed prior to an AC analysis.
+** If no other analysis is specified, a .OP command forces a DC analysis to be performed
+** after the operating point has been calculated.
+**
+** Results are displayed on your SSH terminal.
+*****************************************************************************************
+
+.OP
+
+*** To be compared with the output of the Python design script!
+*** /!\ The saturation of ALL transistors must be verified (cfr 'OTA.chi' file)
+*** Enjoy the symmetry of the OTA!
+
+.extract DC label=VDD V(VDD)
+.extract DC label=IN V(INp)
+.extract DC label=VOUT V(OUT)
+.extract DC label=VSG12 -VGS(xM1.MAIN)
+.extract DC label=VSD1 -VDS(xM1.MAIN)
+.extract DC label=VSD2 -VDS(xM2.MAIN)
+
+.extract DC label=VSG34 VGS(xM3.MAIN)
+.extract DC label=VDS3 VDS(xM3.MAIN)
+.extract DC label=VDS4 VDS(xM4.MAIN)
+
+.extract DC label=VSG568 -VGS(xM5.MAIN)
+.extract DC label=VSD5 -VDS(xM5.MAIN)
+.extract DC label=VSD6 -VDS(xM6.MAIN)
+.extract DC label=VSD8 -VDS(xM8.MAIN)
+
+.extract DC label=VGS9 VGS(xM9.MAIN)
+.extract DC label=VDS9 VDS(xM9.MAIN)
+
+
+*** Currents
+.extract DC label=ID1 I(xM1.MAIN.S)
+.extract DC label=ID2 I(xM2.MAIN.S)
+.extract DC label=ID3 I(xM3.MAIN.D)
+.extract DC label=ID4 I(xM4.MAIN.D)
+.extract DC label=ID5 I(xM5.MAIN.S)
+.extract DC label=ID6 I(xM6.MAIN.S)
+.extract DC label=ID7 I(xM7.MAIN.D)
+.extract DC label=ID8 I(xM8.MAIN.S)
+.extract DC label=ID9 I(xM9.MAIN.D)
+
+
+* (gm/ID)'s
+.extract DC label=gm_over_ID1 'gm(xM1.MAIN)/ID1'
+.extract DC label=gm_over_ID2 'gm(xM2.MAIN)/ID2'
+.extract DC label=gm_over_ID3 'gm(xM3.MAIN)/ID3'
+.extract DC label=gm_over_ID4 'gm(xM4.MAIN)/ID4'
+.extract DC label=gm_over_ID5 'gm(xM5.MAIN)/ID5'
+.extract DC label=gm_over_ID6 'gm(xM6.MAIN)/ID6'
+.extract DC label=gm_over_ID7 'gm(xM7.MAIN)/ID7'
+.extract DC label=gm_over_ID8 'gm(xM8.MAIN)/ID8'
+.extract DC label=gm_over_ID9 'gm(xM9.MAIN)/ID9'
+
+* Power consumption
+.extract DC label=Power '-V(VDD)*I(VVDD)'
+
+***** AC *****
+
+*#com
+.AC dec 100 fmin fmax
+
+*** Gain
+.defwave Av = 'v(OUT)/(v(INp)-v(INm))'
+.extract AC label=Av0 'max(wdb(Av))'
+*** Transition Frequency
+.extract AC label=fT 'xthres(wdb(Av),0)'
+*** Phase Margin
+.extract AC label=Phase_Margin '180 - yval(wp(Av),1) + xycond(wp(Av),wdb(Av)<0)'
+
+*** Bode diagram (amplitude and phase)
+.plot AC w(Av)
+*#endcom
+
+***** TRAN *****
+* The step response of the closed-loop amplifier
+
+#com
+.TRAN 0 T
+
+.defwave TRAN err = db((V(INp)-V(OUT)-IN+VOUT)/(V(INp)-IN))
+.plot TRAN V(INp) V(OUT) w(err)
+#endcom
+
+***** CMRR *****
+* The step response of the closed-loop amplifier
+
+#com
+.TRAN 0 T
+
+.defwave TRAN err = db((V(INp)-V(OUT)-IN+VOUT)/(V(INp)-IN))
+.plot TRAN V(INp) V(INm) V(OUT) d(VOUT)/d(VINp)
+#endcom
+
+#com
+.AC dec 100 fmin fmax
+
+*** Gain
+.defwave Av = 'v(OUT)/(v(INp))'
+.extract AC label=Av0 'max(wdb(Av))'
+*** Transition Frequency
+.extract AC label=fT 'xthres(wdb(Av),0)'
+*** Phase Margin
+.extract AC label=Phase_Margin '180 - yval(wp(Av),1) + xycond(wp(Av),wdb(Av)<0)'
+
+*** Bode diagram (amplitude and phase)
+.plot AC w(Av)
+#endcom
+
+***** PSRR *****
+#com
+.AC dec 100 fmin fmax
+
+*** Gain
+.defwave Av = 'v(OUT)/(v(VDD))'
+.extract AC label=Av0 'max(wdb(Av))'
+*** Transition Frequency
+.extract AC label=fT 'xthres(wdb(Av),0)'
+*** Phase Margin
+.extract AC label=Phase_Margin '180 - yval(wp(Av),1) + xycond(wp(Av),wdb(Av)<0)'
+
+*** Bode diagram (amplitude and phase)
+.plot AC w(Av)
+#endcom
+
+
+
+
+***** CLOSED-LOOP AC *****
+
+#com
+.AC dec 100 fmin fmax
+.LSTB VSTB
+
+.extract AC label=Av0 'max(lstb_db)'
+.extract AC label=fT 'xthres(lstb_db,0)'
+.extract AC label=Phase_Margin '180 - yval(lstb_p,1) + xycond(lstb_p,lstb_db<0)'
+.plot ac lstb_db lstb_p
+#endcom
