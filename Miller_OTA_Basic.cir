@@ -49,8 +49,6 @@
 * gm_over_ID1 = 5
 * gm_over_ID4 = 5
 * gm_over_ID7 = 5
-* gm_over_ID9 = 5
-
 *** Transistor dimensions
 
 .param B = 1
@@ -76,59 +74,11 @@
 .param W8 = 30u
 .param L8 = 1.5u
 
-.param W9 = 1u
-.param L9 = 4u
-
 *** Bias point
 
 .param VIN = 1.085
 .param IBIAS = 45u
 *#endcom
-
-***** Improved Design
-
-#com
-* B = 1
-* gm_over_ID1 = 20
-* gm_over_ID4 = 5
-* gm_over_ID7 = 5
-* gm_over_ID9 = 5
-
-*** Transistor dimensions
-
-.param B = 1
-.param L = 2u
-
-.param W1 = 4.15u
-.param L1 = L
-.param W2 = W1
-.param L2 = L
-
-.param W3 =3.6u
-.param L3 = L
-.param W4 = W3
-.param L4 = L
-
-.param W5 = B*W3
-.param L5 = L
-.param W6 = B*W4
-.param L6 = L
-
-.param W7 =0.67u
-.param L7 = L
-.param W8 = W7
-.param L8 = L
-
-.param W9 =4.43u
-.param L9 = L
-.param W10 = W9
-.param L10 = L
-
-*** Bias point
-
-.param VIN =0.6
-.param IBIAS =8.38u
-#endcom
 
 *** AC simulation parameters
 
@@ -146,7 +96,7 @@
 * Delay of the input step
 .param td = {100*dt}
 * Rise time of the input step
-.param tr = 10u
+.param tr = 10p
 * Parameters for a periodic pulse signal (see reference manual)
 
 *tr = 10 p STEP tr = 10u CMRR
@@ -157,7 +107,7 @@
 .param step = 0.01
 
 
-.param tr_CMRR = 10u
+.param tr_CMRR = 10p
 .param tf_CMRR = tr_CMRR
 .param pw_CMRR = 1p
 
@@ -182,8 +132,6 @@ xM6 OUT G5689 VDD VDD pch_lvt_mac w = W6 l = L6
 xM7 OUT G7 GND GND nch_lvt_mac w = W7 l = L7
 xM8 G5689 G5689 VDD VDD pch_lvt_mac w = W8 l = L8
 
-xM9 G5689 G5689 GND GND nch_hvt_mac w = W9 l = L9
-
 
 * Load capacitance
 Cload OUT GND Cl
@@ -196,7 +144,7 @@ Cfeedback OUT G7 Cf
 **********************************
 
 *** Ideal current source
-*IIbias VDD D9 DC IBIAS
+IIbias G5689 GND DC IBIAS
 
 *** Ground
 * absolute voltage reference
@@ -293,10 +241,6 @@ VVINp INp 0 DC VIN
 .extract DC label=VSD6 -VDS(xM6.MAIN)
 .extract DC label=VSD8 -VDS(xM8.MAIN)
 
-.extract DC label=VGS9 VGS(xM9.MAIN)
-.extract DC label=VDS9 VDS(xM9.MAIN)
-
-
 *** Currents
 .extract DC label=ID1 I(xM1.MAIN.S)
 .extract DC label=ID2 I(xM2.MAIN.S)
@@ -306,7 +250,6 @@ VVINp INp 0 DC VIN
 .extract DC label=ID6 I(xM6.MAIN.S)
 .extract DC label=ID7 I(xM7.MAIN.D)
 .extract DC label=ID8 I(xM8.MAIN.S)
-.extract DC label=ID9 I(xM9.MAIN.D)
 
 
 * (gm/ID)'s
@@ -318,7 +261,6 @@ VVINp INp 0 DC VIN
 .extract DC label=gm_over_ID6 'gm(xM6.MAIN)/ID6'
 .extract DC label=gm_over_ID7 'gm(xM7.MAIN)/ID7'
 .extract DC label=gm_over_ID8 'gm(xM8.MAIN)/ID8'
-.extract DC label=gm_over_ID9 'gm(xM9.MAIN)/ID9'
 
 * Power consumption
 .extract DC label=Power '-V(VDD)*I(VVDD)'

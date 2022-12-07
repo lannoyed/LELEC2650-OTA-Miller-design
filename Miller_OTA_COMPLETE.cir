@@ -1,5 +1,5 @@
-* TSMC 65nm OTA Simulation
-* Marco Gonzalez & LÃ©opold Van Brandt
+ * TSMC 65nm OTA Simulation
+* Marco Gonzalez & Léopold Van Brandt
 * October 2022
 *-----------------------------------------------
 
@@ -27,12 +27,23 @@
 * To tune the accuracy of the simulation (related to the numerical methods, beyond the scope of this course; check the manual)
 .option EPS = 1e-8
 
+*only one activate at the same time
+* #define mean activate
+* !#define mean desactivation 
+#define AC 1
+!#define STEP 1
+!#define PSRR 1
+!#define CMRR 1
+!#define SR 1
+!#define CL 1
+
+
 *******************************
 *	Design Parameters
 *******************************
 
 *** Supply voltage
-.param vdd_val = 3
+.param vdd_val = 1
 
 *** Load capacitance
 .param Cl = 1p
@@ -78,11 +89,9 @@
 
 
 * no datas begin
-.param W8 = 30u
-.param L8 = 1.5u
+.param W8 = 1u
+.param L8 = 0.4u
 
-.param W9 = 1u
-.param L9 = 4u
 * no datas end
 
 
@@ -112,60 +121,16 @@
 
 *** Bias point
 
-.param VIN = 1.085
+.param VIN = 0.43
 .param IBIAS = 45u
 *#endcom
 
-***** Improved Design
-
-#com
-* B = 1
-* gm_over_ID1 = 20
-* gm_over_ID4 = 5
-* gm_over_ID7 = 5
-* gm_over_ID9 = 5
-
-*** Transistor dimensions
-
-.param B = 1
-.param L = 2u
-
-.param W1 = 4.15u
-.param L1 = L
-.param W2 = W1
-.param L2 = L
-
-.param W3 =3.6u
-.param L3 = L
-.param W4 = W3
-.param L4 = L
-
-.param W5 = B*W3
-.param L5 = L
-.param W6 = B*W4
-.param L6 = L
-
-.param W7 =0.67u
-.param L7 = L
-.param W8 = W7
-.param L8 = L
-
-.param W9 =4.43u
-.param L9 = L
-.param W10 = W9
-.param L10 = L
-
-*** Bias point
-
-.param VIN =0.6
-.param IBIAS =8.38u
-#endcom
 
 *** AC simulation parameters
 
 .param V0 = 5m
-.param fmin = 1
-.param fmax = 1e9
+.param fmin = 0.0000001
+.param fmax = 1e10
 
 *** TRAN simulation parameters
 
@@ -177,7 +142,7 @@
 * Delay of the input step
 .param td = {100*dt}
 * Rise time of the input step
-.param tr = 10u
+.param tr = 10p
 * Parameters for a periodic pulse signal (see reference manual)
 
 *tr = 10 p STEP tr = 10u CMRR
@@ -213,15 +178,12 @@ xM6 OUT1 G5689 VDD VDD pch_lvt_mac w = W6 l = L6
 xM7 OUT1 G7 GND GND nch_lvt_mac w = W7 l = L7
 xM8 G5689 G5689 VDD VDD pch_lvt_mac w = W8 l = L8
 
-xM9 G5689 G5689 GND GND nch_hvt_mac w = W9 l = L9
-
-
 xM10 OUT G1017 VDD VDD pch_lvt_mac w = W10 l = L10
 xM11 OUT G5689 VDD VDD pch_lvt_mac w = W11 l = L11
 
-xM12 OUT X GND GND nch_hvt_mac w = W12 = L12
-xM13 X X GND GND nch_hvt_mac w = W13 = L13
-xM14 X G34 GND GND nch_hvt_mac w = W14 = L14
+xM12 OUT X GND GND nch_hvt_mac w = W12 l = L12
+xM13 X X GND GND nch_hvt_mac w = W13 l = L13
+xM14 X G34 GND GND nch_hvt_mac w = W14 l = L14
 
 xM15 X G5689 VDD VDD pch_lvt_mac w = W15 l = L15
 
@@ -229,7 +191,7 @@ xM16 G1017 OUT1 GND GND nch_lvt_mac w = W16 l = L16
 xM17 G1017 G1017 VDD VDD pch_lvt_mac w = W17 l = L17
 
 * Load capacitance
-Cload OUT2 GND Cl
+Cload OUT GND Cl
 
 * FeedBack capacitance
 Cc2 OUT1 G7 Cf
@@ -240,7 +202,7 @@ Ccl OUT G7 Cf2
 **********************************
 
 *** Ideal current source
-*IIbias VDD D9 DC IBIAS
+IIbias G5689 GND DC IBIAS
 
 *** Ground
 * absolute voltage reference
@@ -256,40 +218,40 @@ VVDD VDD GND DC vdd_val
 
 ***** DC & AC *****
 
-*#com
+#if (defined (AC)) 
 VVINp INp GND DC VIN AC +V0
 VVINm INm GND DC VIN AC -V0
-*#endcom
+#endif
 
 ***** Step response *****
-#com
+#if (defined (STEP))
 *** Negative feedback loop
 .connect INm OUT
 VVINp INp GND pulse vpulse_val 'vpulse_val+step' td tr tf pw per
-#endcom
+#endif
+
+
+***** Slew Rate *****
+#if (defined (SR))
+*** Negative feedback loop
+.connect INm OUT
+VVINp INp GND pulse '0' 'vpulse_val+step' td tr tf pw per
+#endif
 
 ***** CMRR *****
-#com
-VVINp INp GND pulse vpulse_val 'vpulse_val+0.3' td tr_CMRR tf_CMRR pw_CMRR 
-
-VVINm INm GND pulse vpulse_val 'vpulse_val+0.3' td tr_CMRR tf_CMRR pw_CMRR
-#endcom
-
-#com
+#if (defined (CMRR)) 
 VVINp INp GND DC VIN AC +V0
 VVINm INm GND DC VIN AC +V0
-#endcom
+#endif
 
 ***PSRR***
-#com
+#if (defined (PSRR)) 
 VVINp INp GND DC vpulse_val
 VVINm INm GND DC vpulse_val
-
-
-#endcom
+#endif
 
 ***** Closed-loop stability *****
-#com
+#if (defined (CL)) 
 *** Zero-voltage voltage source
 *** In DC it behaves like a short circuit
 *** In AC it measures the loop stability
@@ -297,7 +259,7 @@ VVINm INm GND DC vpulse_val
 VSTB INm OUT
 *** The positive input must still be biased in DC, but no AC component is needed
 VVINp INp 0 DC VIN
-#endcom
+#endif
 
 **********************************
 *	Simulations and Measurements
@@ -337,8 +299,6 @@ VVINp INp 0 DC VIN
 .extract DC label=VSD6 -VDS(xM6.MAIN)
 .extract DC label=VSD8 -VDS(xM8.MAIN)
 
-.extract DC label=VGS9 VGS(xM9.MAIN)
-.extract DC label=VDS9 VDS(xM9.MAIN)
 
 
 *** Currents
@@ -346,11 +306,10 @@ VVINp INp 0 DC VIN
 .extract DC label=ID2 I(xM2.MAIN.S)
 .extract DC label=ID3 I(xM3.MAIN.D)
 .extract DC label=ID4 I(xM4.MAIN.D)
-.extract DC label=ID5 I(xM5.MAIN.S)
+.extract DC label=ID5 I(xM5.MAIN.S) 
 .extract DC label=ID6 I(xM6.MAIN.S)
 .extract DC label=ID7 I(xM7.MAIN.D)
 .extract DC label=ID8 I(xM8.MAIN.S)
-.extract DC label=ID9 I(xM9.MAIN.D)
 
 
 * (gm/ID)'s
@@ -362,14 +321,13 @@ VVINp INp 0 DC VIN
 .extract DC label=gm_over_ID6 'gm(xM6.MAIN)/ID6'
 .extract DC label=gm_over_ID7 'gm(xM7.MAIN)/ID7'
 .extract DC label=gm_over_ID8 'gm(xM8.MAIN)/ID8'
-.extract DC label=gm_over_ID9 'gm(xM9.MAIN)/ID9'
 
 * Power consumption
 .extract DC label=Power '-V(VDD)*I(VVDD)'
 
 ***** AC *****
 
-*#com
+#if (defined (AC)) 
 .AC dec 100 fmin fmax
 
 *** Gain
@@ -382,29 +340,22 @@ VVINp INp 0 DC VIN
 
 *** Bode diagram (amplitude and phase)
 .plot AC w(Av)
-*#endcom
+#endif
 
 ***** TRAN *****
 * The step response of the closed-loop amplifier
 
-#com
+#if (defined (STEP)) 
 .TRAN 0 T
 
 .defwave TRAN err = db((V(INp)-V(OUT)-IN+VOUT)/(V(INp)-IN))
 .plot TRAN V(INp) V(OUT) w(err)
-#endcom
+#endif
 
 ***** CMRR *****
 * The step response of the closed-loop amplifier
 
-#com
-.TRAN 0 T
-
-.defwave TRAN err = db((V(INp)-V(OUT)-IN+VOUT)/(V(INp)-IN))
-.plot TRAN V(INp) V(INm) V(OUT) d(VOUT)/d(VINp)
-#endcom
-
-#com
+#if (defined (CMRR)) 
 .AC dec 100 fmin fmax
 
 *** Gain
@@ -417,10 +368,10 @@ VVINp INp 0 DC VIN
 
 *** Bode diagram (amplitude and phase)
 .plot AC w(Av)
-#endcom
+#endif
 
 ***** PSRR *****
-#com
+#if (defined (PSRR)) 
 .AC dec 100 fmin fmax
 
 *** Gain
@@ -433,14 +384,14 @@ VVINp INp 0 DC VIN
 
 *** Bode diagram (amplitude and phase)
 .plot AC w(Av)
-#endcom
+#endif
 
 
 
 
 ***** CLOSED-LOOP AC *****
 
-#com
+#if (defined (CL)) 
 .AC dec 100 fmin fmax
 .LSTB VSTB
 
@@ -448,4 +399,4 @@ VVINp INp 0 DC VIN
 .extract AC label=fT 'xthres(lstb_db,0)'
 .extract AC label=Phase_Margin '180 - yval(lstb_p,1) + xycond(lstb_p,lstb_db<0)'
 .plot ac lstb_db lstb_p
-#endcom
+#endif
