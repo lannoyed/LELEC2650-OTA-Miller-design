@@ -9,7 +9,6 @@ import numpy as np
 
 
 import os
-os.system('cmd /k "Your Command Prompt Command"')
 
 def run_sim():
     os.system('.csh')
